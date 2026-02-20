@@ -1,2 +1,7 @@
-API_KEY = 'aKNP1kdawt6W5046jlNmGeguXWTcrYqYsPLVB4VIT4fKxyepKvKCq0WicK3JhkXj'
-API_SECRET = 'ALE9z068Nj2JVm5IOY6Rp8ikotDqW2kfbDvUZk0XcfwA3UwFFUlNsqPQZTvnJqU5'
+import os
+from dotenv import load_dotenv
+
+load_dotenv() 
+
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")

@@ -1,0 +1,8 @@
+python-binance
+TA-Lib
+numpy
+backtrader
+flask
+scikit-learn
+joblib
+matplotlib==3.9.4

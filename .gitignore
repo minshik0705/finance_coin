@@ -1,5 +1,91 @@
-
-# Local dev junk
-.venv/
+# =========================
+# OS / Editor junk
+# =========================
 .DS_Store
+Thumbs.db
 
+.vscode/
+.idea/
+
+# =========================
+# Secrets / env
+# =========================
+.env
+.env.*
+!.env.example
+.envrc
+
+# =========================
+# Python bytecode / caches
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.pyre/
+.dmypy.json
+dmypy.json
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# =========================
+# Virtual environments
+# =========================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# =========================
+# Build / packaging
+# =========================
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+pip-wheel-metadata/
+*.egg
+MANIFEST
+.installed.cfg
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Logs / temp
+# =========================
+*.log
+
+# =========================
+# Project artifacts (finance_coin outputs)
+# - 추천: 결과물은 artifacts/ 밑으로 몰기
+# =========================
+artifacts/
+data/               # ⚠️ 데이터 원본을 커밋할 계획이면 이 줄은 제거!
+*.parquet
+*.joblib
+
+# (선택) 결과 이미지도 artifacts/로 옮길 거면 아래 주석 해제
+# *.png
+
+# =========================
+# Airflow local Docker (inside repo)
+# =========================
+airflow/logs/
+airflow/.env
+airflow/postgres-data/
+airflow/redis-data/
+airflow/*__pycache__/

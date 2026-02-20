@@ -6,13 +6,14 @@
     </head>
 
     <body>
-        <h1>Trades</h1>
+        <h1>{{  title  }}</h1>
 
         <div id="chart"></div>
 
         <div id="trades"></div>
 
         <h3>Settings</h3>
+        
         <div id="settings">
             <input type="checkbox" /> RSI 
             <input type="text" id="rsi_length" name="rsi_length" placeholder="14" />
@@ -38,6 +39,6 @@
          */
         </script>
 
-        <script src = "chart.js"></script>
+        <script src = "{{ url_for('static', filename='chart.js') }}"></script>
     </body>
 </html>
