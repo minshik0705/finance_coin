@@ -1,0 +1,11 @@
+{
+  "source": "manual",
+  "universe_type": "core",
+  "membership": [
+    {"base_symbol": "BTC", "pair_symbol": "BTCUSDT"},
+    {"base_symbol": "ETH", "pair_symbol": "ETHUSDT"},
+    {"base_symbol": "XRP", "pair_symbol": "XRPUSDT"},
+    {"base_symbol": "BNB", "pair_symbol": "BNBUSDT"},
+    {"base_symbol": "SOL", "pair_symbol": "SOLUSDT"}
+  ]
+}
