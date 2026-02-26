@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "symbols": {
+    "BTC": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "ETH": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "XRP": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "BNB": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "SOL": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "TRX": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "FIGR_HELOC": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "DOGE": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "WBT": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "ADA": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "BCH": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "LEO": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "HYPE": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "XMR": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "CC": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    }
+  }
+}

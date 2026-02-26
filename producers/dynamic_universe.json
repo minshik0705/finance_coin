@@ -1,0 +1,194 @@
+{
+  "universe_version": 1,
+  "generated_at_ms": 1772013803295,
+  "source": "coingecko",
+  "universe_type": "dynamic",
+  "criteria": "market_cap_desc_top_15",
+  "reason": "fixed_rebalance_interval",
+  "vs_currency": "usd",
+  "exclude_stablecoins": true,
+  "membership": [
+    {
+      "rank": 1,
+      "base_symbol": "BTC",
+      "pair_symbol": "BTCUSDT",
+      "coingecko_id": "bitcoin",
+      "market_cap_rank": 1
+    },
+    {
+      "rank": 2,
+      "base_symbol": "ETH",
+      "pair_symbol": "ETHUSDT",
+      "coingecko_id": "ethereum",
+      "market_cap_rank": 2
+    },
+    {
+      "rank": 3,
+      "base_symbol": "XRP",
+      "pair_symbol": "XRPUSDT",
+      "coingecko_id": "ripple",
+      "market_cap_rank": 4
+    },
+    {
+      "rank": 4,
+      "base_symbol": "BNB",
+      "pair_symbol": "BNBUSDT",
+      "coingecko_id": "binancecoin",
+      "market_cap_rank": 5
+    },
+    {
+      "rank": 5,
+      "base_symbol": "SOL",
+      "pair_symbol": "SOLUSDT",
+      "coingecko_id": "solana",
+      "market_cap_rank": 7
+    },
+    {
+      "rank": 6,
+      "base_symbol": "TRX",
+      "pair_symbol": "TRXUSDT",
+      "coingecko_id": "tron",
+      "market_cap_rank": 8
+    },
+    {
+      "rank": 7,
+      "base_symbol": "FIGR_HELOC",
+      "pair_symbol": "FIGR_HELOCUSDT",
+      "coingecko_id": "figure-heloc",
+      "market_cap_rank": 9
+    },
+    {
+      "rank": 8,
+      "base_symbol": "DOGE",
+      "pair_symbol": "DOGEUSDT",
+      "coingecko_id": "dogecoin",
+      "market_cap_rank": 10
+    },
+    {
+      "rank": 9,
+      "base_symbol": "WBT",
+      "pair_symbol": "WBTUSDT",
+      "coingecko_id": "whitebit",
+      "market_cap_rank": 11
+    },
+    {
+      "rank": 10,
+      "base_symbol": "ADA",
+      "pair_symbol": "ADAUSDT",
+      "coingecko_id": "cardano",
+      "market_cap_rank": 12
+    },
+    {
+      "rank": 11,
+      "base_symbol": "BCH",
+      "pair_symbol": "BCHUSDT",
+      "coingecko_id": "bitcoin-cash",
+      "market_cap_rank": 14
+    },
+    {
+      "rank": 12,
+      "base_symbol": "LEO",
+      "pair_symbol": "LEOUSDT",
+      "coingecko_id": "leo-token",
+      "market_cap_rank": 15
+    },
+    {
+      "rank": 13,
+      "base_symbol": "HYPE",
+      "pair_symbol": "HYPEUSDT",
+      "coingecko_id": "hyperliquid",
+      "market_cap_rank": 16
+    },
+    {
+      "rank": 14,
+      "base_symbol": "XMR",
+      "pair_symbol": "XMRUSDT",
+      "coingecko_id": "monero",
+      "market_cap_rank": 17
+    },
+    {
+      "rank": 15,
+      "base_symbol": "CC",
+      "pair_symbol": "CCUSDT",
+      "coingecko_id": "canton-network",
+      "market_cap_rank": 18
+    }
+  ],
+  "member_state": {
+    "BTC": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "ETH": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "XRP": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "BNB": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "SOL": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "TRX": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "FIGR_HELOC": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "DOGE": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "WBT": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "ADA": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "BCH": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "LEO": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "HYPE": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "XMR": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    },
+    "CC": {
+      "is_in_dynamic": true,
+      "entered_dynamic_at": 1772013803295,
+      "exited_dynamic_at": null
+    }
+  }
+}
