@@ -46,3 +46,10 @@ COINGECKO_STABLE_SYMBOLS      = frozenset({"USDT", "USDC", "DAI", "USDS", "TUSD"
 BINANCE_BLOCKLIST = frozenset()
 BYBIT_BLOCKLIST   = frozenset()
 OKX_BLOCKLIST     = frozenset()
+
+# ── 추가: TimescaleDB settings ───────
+TIMESCALEDB_HOST     = os.getenv("TIMESCALEDB_HOST",     "localhost")
+TIMESCALEDB_PORT     = int(os.getenv("TIMESCALEDB_PORT", "5433"))
+TIMESCALEDB_USER     = os.getenv("TIMESCALEDB_USER",     "tsdb")
+TIMESCALEDB_PASSWORD = os.getenv("TIMESCALEDB_PASSWORD", "tsdb")
+TIMESCALEDB_DB       = os.getenv("TIMESCALEDB_DB",       "crypto")

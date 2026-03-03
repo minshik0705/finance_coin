@@ -1,44 +1,52 @@
-<html>
-    <head>
-        <title>Coinview</title>
-        <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoinView</title>
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
 
-    </head>
+    <link rel="stylesheet" href="/static/style.css">
 
-    <body>
-        <h1>{{  title  }}</h1>
+</head>
 
-        <div id="chart"></div>
+<body>
+    <div id="app">
 
-        <div id="trades"></div>
+        <!-- 헤더 -->
+        <header>
+            <h1>CoinView</h1>
+            <span id="current-price">-</span>
+            <span id="price-change" class="neutral">-</span>
+        </header>
 
-        <h3>Settings</h3>
-        
-        <div id="settings">
-            <input type="checkbox" /> RSI 
-            <input type="text" id="rsi_length" name="rsi_length" placeholder="14" />
-            Overbought
-            <input type="text" id="rsi_overbought" name="rsi_overbought" placeholder="70" />
-            Oversold
-            <input type="text" id="rsi_oversold" name="rsi_oversold" placeholder="30" />
-
+        <!-- 심볼 선택 탭 -->
+        <div id="symbol-tabs">
+            {% for symbol in symbols %}
+            <button
+                class="symbol-btn {% if loop.first %}active{% endif %}"
+                data-symbol="{{ symbol }}">
+                {{ symbol | replace("USDT", "") }}
+            </button>
+            {% endfor %}
         </div>
-        <script>
-        //var binanceSocket = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade")
 
-        var tradeDiv = document.getElementById('trades')
+        <!-- 차트 -->
+        <div id="chart-container">
+            <div id="chart"></div>
+        </div>
 
-        /*
-        binanceSocket.onmessage = function (event) {
-            console.log(event.data);
+        <!-- 이상탐지 알림 -->
+        <div id="anomaly-panel">
+            <h3>🔍 이상탐지 알림</h3>
+            <div id="anomaly-list">
+                <p class="no-data">탐지된 이상 없음</p>
+            </div>
+        </div>
 
-            var messageObject = JSON.parse(event.data)
-            
-            tradeDiv.append(messageObject.p)
-        }
-         */
-        </script>
+    </div>
 
-        <script src = "{{ url_for('static', filename='chart.js') }}"></script>
-    </body>
+    <script src="/static/chart.js"></script>
+
+</body>
 </html>

@@ -1,0 +1,162 @@
+/* static/style.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ── 헤더 ── */
+header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #21262d;
+    margin-bottom: 16px;
+}
+
+header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #58a6ff;
+}
+
+#current-price {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e6edf3;
+}
+
+#price-change {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+#price-change.up     { color: #3fb950; background: #1a2e1a; }
+#price-change.down   { color: #f85149; background: #2e1a1a; }
+#price-change.neutral{ color: #8b949e; background: #21262d; }
+
+/* ── 심볼 탭 ── */
+#symbol-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.symbol-btn {
+    padding: 6px 14px;
+    border: 1px solid #30363d;
+    border-radius: 20px;
+    background: #21262d;
+    color: #8b949e;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.symbol-btn:hover {
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+
+.symbol-btn.active {
+    background: #58a6ff;
+    border-color: #58a6ff;
+    color: #0d1117;
+    font-weight: 700;
+}
+
+/* ── 차트 ── */
+#chart-container {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+#chart {
+    width: 100%;
+    height: 450px;
+    min-height: 450px;
+}
+
+/* ── 이상탐지 패널 ── */
+#anomaly-panel {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+#anomaly-panel h3 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: #8b949e;
+}
+
+#anomaly-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.no-data {
+    color: #8b949e;
+    font-size: 0.9rem;
+}
+
+/* 이상탐지 카드 */
+.anomaly-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border-left: 3px solid;
+    font-size: 0.85rem;
+}
+
+.anomaly-card.strong {
+    background: #2e1a1a;
+    border-color: #f85149;
+}
+
+.anomaly-card.normal {
+    background: #1a2213;
+    border-color: #3fb950;
+}
+
+.anomaly-card .anom-time {
+    color: #8b949e;
+    white-space: nowrap;
+    font-size: 0.8rem;
+}
+
+.anomaly-card .anom-reason {
+    color: #e6edf3;
+    flex: 1;
+}
+
+.anomaly-card .anom-score {
+    color: #8b949e;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}

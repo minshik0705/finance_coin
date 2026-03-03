@@ -86,6 +86,18 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: tsdb
+      POSTGRES_PASSWORD: tsdb
+      POSTGRES_DB: crypto
+    ports:
+      - "5433:5432"    # Airflow PostgreSQL이 5432 쓰므로 5433으로 분리
+    volumes:
+      - timescaledb-volume:/var/lib/postgresql/data
+    restart: always
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
     environment:
@@ -316,3 +328,4 @@ services:
 
 volumes:
   postgres-db-volume:
+  timescaledb-volume: 
