@@ -1,5 +1,6 @@
 # anomaly_detect.py
 from __future__ import annotations
+from sqlalchemy import create_engine, text
 
 import sys
 from pathlib import Path
@@ -25,7 +26,7 @@ from config import (
 # ────────────────────────────────────────
 
 # 학습에 사용할 과거 데이터 기간
-TRAIN_DAYS = 7
+TRAIN_DAYS = 1 #원래는 7일이지만 임시로
 
 # 이상 탐지 임계값 (하위 0.5% → 이상)
 ANOMALY_QUANTILE = 0.005
@@ -51,24 +52,35 @@ def get_conn():
         dbname=TIMESCALEDB_DB
     )
 
+def get_engine():
+    url = (
+        f"postgresql+psycopg2://{TIMESCALEDB_USER}:{TIMESCALEDB_PASSWORD}"
+        f"@{TIMESCALEDB_HOST}:{TIMESCALEDB_PORT}/{TIMESCALEDB_DB}"
+    )
+    return create_engine(url)
 
 def load_ohlcv(conn, symbol: str, exchange: str, days: int) -> pd.DataFrame:
-    """
-    TimescaleDB에서 최근 N일 1분봉 데이터 로드.
-    기존 코드의 pd.read_csv() 대체.
-    """
     since = datetime.now(tz=timezone.utc) - timedelta(days=days)
 
-    sql = """
+    sql = text("""
         SELECT time, open, high, low, close, volume, trade_count
         FROM ohlcv_1m
-        WHERE symbol   = %s
-          AND exchange = %s
-          AND time     >= %s
+        WHERE symbol   = :symbol
+          AND exchange = :exchange
+          AND time     >= :since
         ORDER BY time ASC;
-    """
+    """)
 
-    df = pd.read_sql(sql, conn, params=(symbol, exchange, since))
+    engine = get_engine()
+    try:
+        with engine.connect() as eng_conn:
+            df = pd.read_sql(sql, eng_conn, params={
+                "symbol": symbol,
+                "exchange": exchange,
+                "since": since,
+            })
+    finally:
+        engine.dispose()
 
     if df.empty:
         return df
@@ -142,11 +154,11 @@ def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df["dlogvol"] = df["logvol"].diff()
 
     # 1분봉 기준: 60=1h, 1440=1d
-    df["vol_1h"] = df["logret"].rolling(60,   min_periods=60).std()
-    df["vol_1d"] = df["logret"].rolling(1440, min_periods=1440).std()
+    df["vol_1h"] = df["logret"].rolling(60,   min_periods=30).std()
+    df["vol_1d"] = df["logret"].rolling(1440, min_periods=60).std()
 
-    vmean = vol.rolling(1440, min_periods=1440).mean()
-    vstd  = vol.rolling(1440, min_periods=1440).std()
+    vmean = vol.rolling(1440, min_periods=60).mean()
+    vstd  = vol.rolling(1440, min_periods=60).std()
     df["vol_z_1d"] = (vol - vmean) / vstd.replace(0, np.nan)
 
     X = df[FEATURE_COLS].replace([np.inf, -np.inf], np.nan).dropna()
@@ -242,7 +254,7 @@ def detect(
             print(f"[WARN] {exchange} {symbol}: 데이터 없음, 건너뜀")
             return []
 
-        if len(df) < 1440:
+        if len(df) < 60:
             print(f"[WARN] {exchange} {symbol}: "
                   f"데이터 부족 ({len(df)}행, 최소 1440 필요)")
             return []

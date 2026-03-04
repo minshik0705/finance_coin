@@ -46,6 +46,7 @@ def fetch_ohlcv(symbol: str, exchange: str = "binance", hours: int = 3) -> list[
     conn  = get_conn()
     try:
         with conn.cursor() as cur:
+            #원래는 SELECT time, open, high, low, close, volume -> 중복 timestamp발생 app.py 오류 발생
             cur.execute("""
                 SELECT DISTINCT ON (time) time, open, high, low, close, volume
                 FROM ohlcv_1m
