@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy import create_engine, text
 
 import sys
+import shap
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent))
 
@@ -26,7 +27,7 @@ from config import (
 # ────────────────────────────────────────
 
 # 학습에 사용할 과거 데이터 기간
-TRAIN_DAYS = 1 #원래는 7일이지만 임시로
+TRAIN_DAYS = 7
 
 # 이상 탐지 임계값 (하위 0.5% → 이상)
 ANOMALY_QUANTILE = 0.005
@@ -171,18 +172,29 @@ def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 # 이상 원인 해석 (기존 코드 재활용)
 # ────────────────────────────────────────
 
-def interpret_row(row) -> str:
-    """기존 interpret_row() 그대로."""
-    reasons = []
-    if abs(row.get("logret", 0)) > 0.02:
-        reasons.append(f"Large price move: {row['logret']*100:.2f}%")
-    if row.get("vol_z_1d", 0) > 3:
-        reasons.append(f"Volume spike: {row['vol_z_1d']:.1f}σ")
-    if row.get("range", 0) > 0.05:
-        reasons.append(f"Wide range: {row['range']*100:.1f}%")
-    if row.get("vol_1h", 0) > 2 * row.get("vol_1d", 1e9):
-        reasons.append("Volatility spike")
-    return "; ".join(reasons) if reasons else "Unknown"
+def interpret_row(row, shap_values: np.ndarray) -> str:
+    """
+    SHAP 기반 이상 원인 해석.
+    shap_values: 해당 행의 SHAP value 배열 (FEATURE_COLS 순서)
+    """
+    contributions = sorted(
+        zip(FEATURE_COLS, shap_values),
+        key=lambda x: abs(x[1]),
+        reverse=True
+    )
+
+    # 기여도 상위 3개 피처만 표시
+    top = [(f, v) for f, v in contributions[:3] if abs(v) > 0.001]
+
+    if not top:
+        return "Unknown"
+
+    parts = []
+    for feature, value in top:
+        direction = "↑" if value > 0 else "↓"
+        parts.append(f"{feature}{direction}({value:+.3f})")
+
+    return ", ".join(parts)
 
 
 # ────────────────────────────────────────
@@ -254,7 +266,7 @@ def detect(
             print(f"[WARN] {exchange} {symbol}: 데이터 없음, 건너뜀")
             return []
 
-        if len(df) < 60:
+        if len(df) < 1440:
             print(f"[WARN] {exchange} {symbol}: "
                   f"데이터 부족 ({len(df)}행, 최소 1440 필요)")
             return []
@@ -287,10 +299,26 @@ def detect(
             meta  = saved["meta"]
             print(f"[INFO] {exchange} {symbol}: 저장된 모델 로드")
 
-        # 점수 계산
+        # 점수 계산 (전체 X로 계산)
         scores = model.decision_function(X)
         df_model = df_model.copy()
         df_model.loc[X.index, "anomaly_score"] = scores
+
+        # ── 탐지 범위: 최근 1시간치만 ──────────────
+        # 학습은 7일치로 하되, 결과 생성은 최근 데이터만
+        detect_since = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        df_model = df_model[df_model["time"] >= detect_since]
+        
+        # SHAP 계산 (이상 행에만 적용)
+        scaler = model.named_steps["scaler"]
+        iso    = model.named_steps["iso"]
+        X_scaled = scaler.transform(X)
+
+        explainer   = shap.TreeExplainer(iso)
+        shap_matrix = explainer.shap_values(X_scaled)  # shape: (n, 9)
+
+        # shap_matrix를 index 기준으로 매핑
+        shap_df = pd.DataFrame(shap_matrix, index=X.index, columns=FEATURE_COLS)
 
         thr_overall = meta["threshold_overall"]
         thr_strong  = meta["threshold_strong"]
@@ -308,6 +336,7 @@ def detect(
             severity   = "strong" if score <= thr_strong else "normal"
 
             if is_anomaly:
+                shap_vals = shap_df.loc[idx].values  # 해당 행 SHAP values
                 results.append({
                     "time":          now,
                     "exchange":      exchange,
@@ -315,7 +344,7 @@ def detect(
                     "anomaly_score": float(score),
                     "is_anomaly":    True,
                     "severity":      severity,
-                    "reason":        interpret_row(row),
+                    "reason":        interpret_row(row, shap_vals),
                     "ohlcv_time":    row["time"],
                 })
 
