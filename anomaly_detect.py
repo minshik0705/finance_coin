@@ -98,16 +98,22 @@ def insert_anomaly_results(conn, rows: list[dict]) -> None:
     sql = """
         INSERT INTO anomaly_results
             (time, exchange, symbol, anomaly_score,
-             is_anomaly, severity, reason, ohlcv_time)
+            is_anomaly, severity, reason, ohlcv_time, detected_at)
         VALUES %s
-        ON CONFLICT DO NOTHING;
+        ON CONFLICT (time, exchange, symbol) DO NOTHING;
     """
 
     values = [
         (
-            r["time"], r["exchange"], r["symbol"],
-            r["anomaly_score"], r["is_anomaly"],
-            r["severity"], r["reason"], r["ohlcv_time"],
+            r["time"], 
+            r["exchange"], 
+            r["symbol"],
+            r["anomaly_score"], 
+            r["is_anomaly"],
+            r["severity"], 
+            r["reason"], 
+            r["ohlcv_time"],
+            r["detected_at"],
         )
         for r in rows
     ]
@@ -299,15 +305,32 @@ def detect(
             meta  = saved["meta"]
             print(f"[INFO] {exchange} {symbol}: 저장된 모델 로드")
 
-        # 점수 계산 (전체 X로 계산)
+        # 점수 계산
         scores = model.decision_function(X)
         df_model = df_model.copy()
         df_model.loc[X.index, "anomaly_score"] = scores
 
-        # ── 탐지 범위: 최근 1시간치만 ──────────────
-        # 학습은 7일치로 하되, 결과 생성은 최근 데이터만
-        detect_since = datetime.now(tz=timezone.utc) - timedelta(hours=1)
-        df_model = df_model[df_model["time"] >= detect_since]
+        # ── 탐지 범위: 마지막 탐지 시각 이후부터 ──────────────
+        last_conn = get_conn()
+        try:
+            with last_conn.cursor() as cur:
+                cur.execute("""
+                    SELECT MAX(ohlcv_time)
+                    FROM anomaly_results
+                    WHERE symbol = %s AND exchange = %s;
+                """, (symbol, exchange))
+                last_ohlcv_time = cur.fetchone()[0]
+        finally:
+            last_conn.close()
+
+        if last_ohlcv_time is None:
+            # 최초 실행: 최근 24시간
+            detect_since = datetime.now(tz=timezone.utc) - timedelta(hours=24)
+        else:
+            # 마지막 탐지 ohlcv_time 이후부터
+            detect_since = last_ohlcv_time
+
+        df_model = df_model[df_model["time"] > detect_since]
         
         # SHAP 계산 (이상 행에만 적용)
         scaler = model.named_steps["scaler"]
@@ -336,16 +359,17 @@ def detect(
             severity   = "strong" if score <= thr_strong else "normal"
 
             if is_anomaly:
-                shap_vals = shap_df.loc[idx].values  # 해당 행 SHAP values
+                shap_vals = shap_df.loc[idx].values # 해당 행 SHAP values
                 results.append({
-                    "time":          now,
+                    "time":          row["time"],   # anomaly 발생 봉 시각 (partition key)
                     "exchange":      exchange,
                     "symbol":        symbol,
                     "anomaly_score": float(score),
                     "is_anomaly":    True,
                     "severity":      severity,
                     "reason":        interpret_row(row, shap_vals),
-                    "ohlcv_time":    row["time"],
+                    "ohlcv_time":    row["time"],   # 기존 호환용, time과 동일하게 유지
+                    "detected_at": now,             # 실제 탐지 실행 시각
                 })
 
         print(f"[INFO] {exchange} {symbol}: "
