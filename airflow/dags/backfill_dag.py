@@ -9,7 +9,6 @@ from pathlib import Path
 
 import psycopg2
 import psycopg2.extras
-from binance.client import Client
 
 from airflow import DAG
 from airflow.models import Variable
@@ -52,6 +51,7 @@ def _get_db_conn():
 
 
 def _get_binance_client() -> Client:
+    from binance.client import Client
     api_key = Variable.get("BINANCE_API_KEY", default_var="")
     api_secret = Variable.get("BINANCE_API_SECRET", default_var="")
     return Client(api_key, api_secret)
