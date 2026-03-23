@@ -67,17 +67,15 @@ def _load_core_symbols() -> list[str]:
 
 
 def _get_target_day_bounds(context) -> tuple[datetime, datetime, str]:
-    """
-    Airflow schedule 기준 D-1 하루(UTC)를 계산
-    """
-    execution_date: datetime = context["data_interval_start"]
-    target_date = execution_date.date() - timedelta(days=1)
+    # data_interval_start 대신 실행 시점 기준 어제 날짜 사용
+    # 수동 트리거/스케줄 실행 모두 동일하게 동작
+    yesterday = datetime.now(tz=timezone.utc).date() - timedelta(days=1)
 
     day_start = datetime(
-        target_date.year, target_date.month, target_date.day, tzinfo=timezone.utc
+        yesterday.year, yesterday.month, yesterday.day, tzinfo=timezone.utc
     )
     day_end = day_start + timedelta(days=1)
-    return day_start, day_end, str(target_date)
+    return day_start, day_end, str(yesterday)
 
 
 # ────────────────────────────────────────
