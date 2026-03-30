@@ -1,0 +1,27 @@
+# ⚠️ 경로 수정 필요: /home/ubuntu/finance_coin → 본인 환경에 맞게 변경
+# 적용 방법:
+#   sudo cp systemd/*.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now binance-producer
+
+[Unit]
+Description=Binance WebSocket Producer
+After=network.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/finance_coin
+ExecStart=/home/ubuntu/finance_coin/.venv/bin/python producers/binance_producer.py
+Restart=always
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=5
+EnvironmentFile=/home/ubuntu/finance_coin/.env
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=binance-producer
+
+[Install]
+WantedBy=multi-user.target

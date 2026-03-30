@@ -187,10 +187,11 @@ def run():
                                 f"L:{row['low']:.4f} C:{row['close']:.4f} "
                                 f"V:{row['volume']:.4f} ({row['trade_count']}건)"
                             )
+                    # DB 재연결 로직
                     except Exception as e:
                         print(f"[ERROR] DB insert 실패: {e}")
                         try:
-                            conn = get_conn()
+                            conn = get_conn() # 재연결 시도
                         except Exception as ce:
                             print(f"[ERROR] DB 재연결 실패: {ce}")
 

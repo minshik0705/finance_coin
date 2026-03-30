@@ -1,0 +1,23 @@
+# ⚠️ 경로 수정 필요: /home/ubuntu/finance_coin → 본인 환경에 맞게 변경
+
+[Unit]
+Description=OHLCV Kafka Consumer (1분봉 집계 → TimescaleDB)
+After=network.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/finance_coin
+ExecStart=/home/ubuntu/finance_coin/.venv/bin/python consumers/ohlcv_consumer.py
+Restart=always
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=5
+EnvironmentFile=/home/ubuntu/finance_coin/.env
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ohlcv-consumer
+
+[Install]
+WantedBy=multi-user.target
