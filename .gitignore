@@ -89,3 +89,5 @@ airflow/.env
 airflow/postgres-data/
 airflow/redis-data/
 airflow/*__pycache__/
+producers/dynamic_universe.json
+producers/dynamic_universe_state.json
