@@ -4,6 +4,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import json
+import time
+import requests
 import websocket
 
 from base_producer import BaseProducer
@@ -17,23 +19,61 @@ class BybitProducer(BaseProducer):
     EXCHANGE_NAME = "bybit"
     BLOCKLIST = BYBIT_BLOCKLIST
 
+    def load_universe_symbols(self) -> list:
+        """Bybit 실제 상장 심볼과 교집합만 구독"""
+        symbols = super().load_universe_symbols()
+        listed = self._get_bybit_listed_symbols()
+        if listed:
+            symbols = [s for s in symbols if s in listed]
+            print(f"[INFO] [bybit] 필터링 후 {len(symbols)}개 심볼")
+        return symbols
+
+    @staticmethod
+    def _get_bybit_listed_symbols() -> set:
+        try:
+            resp = requests.get(
+                "https://api.bybit.com/v5/market/instruments-info",
+                params={"category": "spot"},
+                timeout=10
+            )
+            data = resp.json()
+            symbols = set()
+            for item in data["result"]["list"]:
+                if item["quoteCoin"] == "USDT" and item["status"] == "Trading":
+                    symbols.add(item["symbol"])
+            print(f"[INFO] [bybit] 상장 심볼 {len(symbols)}개 조회 완료")
+            return symbols
+        except Exception as e:
+            print(f"[WARN] [bybit] 심볼 목록 조회 실패: {e}")
+            return set()
+
     # ────────────────────────────────────────
     # WS 연결
     # ────────────────────────────────────────
 
     def build_ws_connection(self, symbols: list) -> websocket.WebSocketApp:
-        """
-        Bybit는 고정 URL에 연결 후
-        on_open에서 subscribe 메시지를 보내는 방식.
-        (Binance처럼 URL에 심볼 목록을 넣지 않음)
-        """
         return websocket.WebSocketApp(
             BYBIT_WS_URL,
             on_open=self._on_open,
-            on_message=self._on_message,  # BaseProducer 공통 콜백
-            on_error=self._on_error,      # BaseProducer 공통 콜백
-            on_close=self._on_close,      # BaseProducer 공통 콜백
+            on_message=self._on_message,
+            on_error=self._on_error,
+            on_close=self._on_close,
         )
+
+    def _run_ws(self, symbols: list) -> None:
+        """Bybit는 ping_interval=0 (클라이언트 ping 비활성화)"""
+        self.current_symbols = list(symbols)
+
+        if not self.current_symbols:
+            print(f"[WARN] [{self.EXCHANGE_NAME}] no symbols. sleeping...")
+            time.sleep(5)
+            return
+
+        print(f"[INFO] [{self.EXCHANGE_NAME}] connecting for "
+              f"{len(self.current_symbols)} symbols")
+
+        self.ws_app = self.build_ws_connection(self.current_symbols)
+        self.ws_app.run_forever(ping_interval=0)
 
     def _on_open(self, ws) -> None:
         print(f"[INFO] [{self.EXCHANGE_NAME}] websocket opened "
@@ -42,45 +82,25 @@ class BybitProducer(BaseProducer):
         self._send_subscribe(ws)
 
     def _send_subscribe(self, ws) -> None:
-        """
-        Bybit 구독 메시지 전송.
-        topic 형식: "publicTrade.BTCUSDT"
-        """
         topics = [f"publicTrade.{s}" for s in self.current_symbols]
-        ws.send(json.dumps({
-            "op":   "subscribe",
-            "args": topics,
-        }))
-        print(f"[INFO] [{self.EXCHANGE_NAME}] subscribe sent "
-              f"for {len(topics)} symbols")
+
+        chunk_size = 10
+        for i in range(0, len(topics), chunk_size):
+            chunk = topics[i:i + chunk_size]
+            ws.send(json.dumps({
+                "op":   "subscribe",
+                "args": chunk,
+            }))
+            print(f"[INFO] [{self.EXCHANGE_NAME}] subscribe sent "
+                  f"{i+1}~{i+len(chunk)} / {len(topics)}")
 
     # ────────────────────────────────────────
     # 메시지 파싱
     # ────────────────────────────────────────
 
     def parse_message(self, message: str) -> list[dict]:
-        """
-        Bybit v5 public spot trade 메시지 파싱.
-
-        형식:
-        {
-            "topic": "publicTrade.BTCUSDT",
-            "type": "snapshot",
-            "ts": 1710000000000,
-            "data": [
-                {
-                    "T": 1710000000000,   ← trade time (ms)
-                    "s": "BTCUSDT",
-                    "p": "68001.4",
-                    "v": "0.003",
-                    "S": "Buy"            ← side
-                }
-            ]
-        }
-        """
         payload = json.loads(message)
 
-        # ping/pong/subscribe ack 무시
         if payload.get("op") in {"pong", "ping", "subscribe"}:
             return []
 
@@ -109,7 +129,7 @@ class BybitProducer(BaseProducer):
                 "source_type":  "trade",
                 "base_symbol":  symbol[:-4] if symbol.endswith("USDT") else symbol,
                 "quote_symbol": "USDT" if symbol.endswith("USDT") else None,
-                "side":         item.get("S"),  # Buy / Sell
+                "side":         item.get("S"),
                 "topic":        topic,
             })
 
