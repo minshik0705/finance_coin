@@ -1,27 +1,19 @@
-# ⚠️ 경로 수정 필요: /home/ubuntu/finance_coin → 본인 환경에 맞게 변경
-# 적용 방법:
-#   sudo cp systemd/*.service /etc/systemd/system/
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable --now binance-producer
-
 [Unit]
-Description=Binance WebSocket Producer
+Description=Binance Producer Service
 After=network.target docker.service
-Wants=network-online.target
+Requires=docker.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Service]
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/finance_coin
-ExecStart=/home/ubuntu/finance_coin/.venv/bin/python producers/binance_producer.py
-Restart=always
-RestartSec=5
-StartLimitInterval=60
-StartLimitBurst=5
 EnvironmentFile=/home/ubuntu/finance_coin/.env
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=binance-producer
+ExecStartPre=/bin/bash -c 'until timeout 10 docker exec airflow-kafka-1 kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1; do echo "[binance-producer] waiting for kafka"; sleep 5; done'
+ExecStart=/home/ubuntu/finance_coin/.venv/bin/python /home/ubuntu/finance_coin/producers/binance_producer.py
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

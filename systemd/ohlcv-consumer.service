@@ -1,23 +1,20 @@
-# ⚠️ 경로 수정 필요: /home/ubuntu/finance_coin → 본인 환경에 맞게 변경
-
 [Unit]
-Description=OHLCV Kafka Consumer (1분봉 집계 → TimescaleDB)
+Description=OHLCV Consumer Service
 After=network.target docker.service
-Wants=network-online.target
+Requires=docker.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Service]
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/finance_coin
-ExecStart=/home/ubuntu/finance_coin/.venv/bin/python consumers/ohlcv_consumer.py
-Restart=always
-RestartSec=5
-StartLimitInterval=60
-StartLimitBurst=5
 EnvironmentFile=/home/ubuntu/finance_coin/.env
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=ohlcv-consumer
+ExecStartPre=/bin/bash -c 'until timeout 10 docker exec airflow-kafka-1 kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1; do echo "[ohlcv-consumer] waiting for kafka"; sleep 5; done'
+ExecStartPre=/bin/bash -c 'until timeout 5 docker exec airflow-timescaledb-1 pg_isready -U airflow >/dev/null 2>&1; do echo "[ohlcv-consumer] waiting for timescaledb"; sleep 5; done'
+ExecStart=/home/ubuntu/finance_coin/.venv/bin/python /home/ubuntu/finance_coin/consumers/ohlcv_consumer.py
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

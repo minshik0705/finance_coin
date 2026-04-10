@@ -1,0 +1,19 @@
+[Unit]
+Description=Bybit Producer Service
+After=network.target docker.service
+Requires=docker.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/finance_coin
+EnvironmentFile=/home/ubuntu/finance_coin/.env
+ExecStartPre=/bin/bash -c 'until timeout 10 docker exec airflow-kafka-1 kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1; do echo "[bybit-producer] waiting for kafka"; sleep 5; done'
+ExecStart=/home/ubuntu/finance_coin/.venv/bin/python /home/ubuntu/finance_coin/producers/bybit_producer.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
