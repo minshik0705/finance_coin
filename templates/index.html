@@ -5,22 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoinView</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
-
     <link rel="stylesheet" href="/static/style.css">
-
 </head>
-
 <body>
     <div id="app">
 
-        <!-- 헤더 -->
         <header>
             <h1>CoinView</h1>
             <span id="current-price">-</span>
             <span id="price-change" class="neutral">-</span>
         </header>
 
-        <!-- 심볼 선택 탭 -->
         <div id="symbol-tabs">
             {% for symbol in symbols %}
             <button
@@ -31,14 +26,21 @@
             {% endfor %}
         </div>
 
-        <!-- 차트 -->
         <div id="chart-container">
             <div id="chart"></div>
         </div>
 
-        <!-- 이상탐지 알림 -->
+        <!-- 글로벌 이상탐지 패널 -->
+        <div id="global-anomaly-panel">
+            <h3>🌐 글로벌 이상탐지 <span class="panel-desc">(2개 이상 거래소 동시 탐지)</span></h3>
+            <div id="global-anomaly-list">
+                <p class="no-data">탐지된 글로벌 이상 없음</p>
+            </div>
+        </div>
+
+        <!-- 심볼별 이상탐지 패널 -->
         <div id="anomaly-panel">
-            <h3>🔍 이상탐지 알림</h3>
+            <h3>🔍 이상탐지 알림 <span class="panel-desc">(전체 거래소)</span></h3>
             <div id="anomaly-list">
                 <p class="no-data">탐지된 이상 없음</p>
             </div>
@@ -47,6 +49,5 @@
     </div>
 
     <script src="/static/chart.js"></script>
-
 </body>
 </html>

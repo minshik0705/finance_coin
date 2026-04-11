@@ -160,3 +160,51 @@ header h1 {
     font-size: 0.75rem;
     white-space: nowrap;
 }
+/* ── 거래소 배지 ── */
+.exchange-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* ── scope 배지 ── */
+.scope-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+.scope-global { background: #1a2e3a; color: #58a6ff; }
+.scope-cross  { background: #2e2a1a; color: #f0b90b; }
+.scope-local  { background: #21262d; color: #8b949e; }
+
+/* ── 심볼 텍스트 ── */
+.anom-symbol {
+    font-weight: 700;
+    color: #e6edf3;
+    font-size: 0.85rem;
+}
+
+/* ── 글로벌 패널 ── */
+#global-anomaly-panel {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+#global-anomaly-panel h3 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: #58a6ff;
+}
+
+.panel-desc {
+    font-size: 0.75rem;
+    color: #8b949e;
+    font-weight: 400;
+}

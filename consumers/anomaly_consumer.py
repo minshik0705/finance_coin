@@ -16,7 +16,7 @@ from anomaly_detect import run_all
 
 DETECT_INTERVAL_SECONDS  = 60    # 1분마다 탐지
 RETRAIN_INTERVAL_MINUTES = 60    # 60분마다 재학습
-EXCHANGES = ["binance"]
+EXCHANGES = ["binance", "okx", "bybit"]
 
 
 # ────────────────────────────────────────

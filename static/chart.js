@@ -15,8 +15,6 @@ let currentSymbol = null;
 // ────────────────────────────────────────
 function initChart() {
     const container = document.getElementById("chart");
-
-    // 컨테이너 크기가 0이면 부모 기준으로 계산
     const width = container.clientWidth || container.parentElement.clientWidth || 800;
     chart = LightweightCharts.createChart(container, {
         width:  width,
@@ -33,33 +31,30 @@ function initChart() {
             mode: LightweightCharts.CrosshairMode.Normal,
         },
         timeScale: {
-            borderColor:      "#21262d",
-            timeVisible:      true,
-            secondsVisible:   false,
+            borderColor:    "#21262d",
+            timeVisible:    true,
+            secondsVisible: false,
         },
         rightPriceScale: {
             borderColor: "#21262d",
         },
     });
 
-    // 캔들 시리즈
     candleSeries = chart.addCandlestickSeries({
-        upColor:        "#3fb950",
-        downColor:      "#f85149",
-        borderUpColor:  "#3fb950",
-        borderDownColor:"#f85149",
-        wickUpColor:    "#3fb950",
-        wickDownColor:  "#f85149",
+        upColor:         "#3fb950",
+        downColor:       "#f85149",
+        borderUpColor:   "#3fb950",
+        borderDownColor: "#f85149",
+        wickUpColor:     "#3fb950",
+        wickDownColor:   "#f85149",
     });
 
-    // 볼륨 시리즈
     volumeSeries = chart.addHistogramSeries({
-        priceFormat:     { type: "volume" },
-        priceScaleId:    "volume",
-        scaleMargins:    { top: 0.85, bottom: 0 },
+        priceFormat:  { type: "volume" },
+        priceScaleId: "volume",
+        scaleMargins: { top: 0.85, bottom: 0 },
     });
 
-    // 창 크기 변경 시 차트 리사이즈
     window.addEventListener("resize", () => {
         chart.applyOptions({ width: container.clientWidth });
     });
@@ -67,7 +62,29 @@ function initChart() {
 
 
 // ────────────────────────────────────────
-// 데이터 로드 (REST API → 초기 차트)
+// 거래소 배지
+// ────────────────────────────────────────
+function exchangeBadge(exchange) {
+    const colors = {
+        binance: { bg: "#f0b90b22", text: "#f0b90b", label: "Binance" },
+        okx:     { bg: "#00b4d822", text: "#00b4d8", label: "OKX"     },
+        bybit:   { bg: "#f7931a22", text: "#f7931a", label: "Bybit"   },
+    };
+    const c = colors[exchange] || { bg: "#8b949e22", text: "#8b949e", label: exchange };
+    return `<span class="exchange-badge" style="background:${c.bg};color:${c.text}">${c.label}</span>`;
+}
+
+// scope 배지 (global/cross/local)
+function scopeBadge(exchanges) {
+    const count = exchanges ? exchanges.length : 1;
+    if (count >= 3) return `<span class="scope-badge scope-global">🌐 GLOBAL</span>`;
+    if (count === 2) return `<span class="scope-badge scope-cross">⚡ CROSS</span>`;
+    return `<span class="scope-badge scope-local">📍 LOCAL</span>`;
+}
+
+
+// ────────────────────────────────────────
+// 데이터 로드
 // ────────────────────────────────────────
 async function loadOHLCV(symbol) {
     const resp = await fetch(`/api/ohlcv/${symbol}?hours=3`);
@@ -91,7 +108,6 @@ async function loadOHLCV(symbol) {
     volumeSeries.setData(volumes);
     chart.timeScale().fitContent();
 
-    // 현재가 업데이트
     if (data.length > 0) {
         const last = data[data.length - 1];
         const prev = data.length > 1 ? data[data.length - 2] : null;
@@ -107,11 +123,17 @@ async function loadAnomalies(symbol) {
 }
 
 
+async function loadGlobalAnomalies() {
+    const resp = await fetch(`/api/anomalies/global?hours=3`);
+    const data = await resp.json();
+    renderGlobalAnomalies(data);
+}
+
+
 // ────────────────────────────────────────
-// WebSocket (실시간 업데이트)
+// WebSocket
 // ────────────────────────────────────────
 function connectWS(symbol) {
-    // 기존 연결 닫기
     if (ws) {
         ws.close();
         ws = null;
@@ -128,7 +150,6 @@ function connectWS(symbol) {
         const msg = JSON.parse(event.data);
 
         if (msg.type === "ohlcv") {
-            // 차트에 최신 캔들 업데이트
             candleSeries.update({
                 time:  msg.time,
                 open:  msg.open,
@@ -145,14 +166,12 @@ function connectWS(symbol) {
         }
 
         if (msg.type === "anomaly") {
-            // 이상탐지 결과 맨 위에 추가
             prependAnomaly(msg);
         }
     };
 
     ws.onclose = () => {
         console.log(`[WS] 연결 종료: ${symbol}`);
-        // 5초 후 재연결
         setTimeout(() => {
             if (currentSymbol === symbol) connectWS(symbol);
         }, 5000);
@@ -179,8 +198,8 @@ function updatePrice(price, prevPrice) {
     if (prevPrice !== null) {
         const pct = ((price - prevPrice) / prevPrice * 100).toFixed(2);
         const dir = price >= prevPrice ? "up" : "down";
-        changeEl.textContent  = `${pct > 0 ? "+" : ""}${pct}%`;
-        changeEl.className    = dir;
+        changeEl.textContent = `${pct > 0 ? "+" : ""}${pct}%`;
+        changeEl.className   = dir;
     }
 }
 
@@ -196,6 +215,7 @@ function renderAnomalies(anomalies) {
     list.innerHTML = anomalies.map(a => `
         <div class="anomaly-card ${a.severity}">
             <span class="anom-time">${a.time}</span>
+            ${exchangeBadge(a.exchange)}
             <span class="anom-reason">${a.reason}</span>
             <span class="anom-score">${a.anomaly_score}</span>
         </div>
@@ -206,7 +226,6 @@ function renderAnomalies(anomalies) {
 function prependAnomaly(a) {
     const list = document.getElementById("anomaly-list");
 
-    // "탐지된 이상 없음" 제거
     const noData = list.querySelector(".no-data");
     if (noData) noData.remove();
 
@@ -214,15 +233,36 @@ function prependAnomaly(a) {
     card.className = `anomaly-card ${a.severity}`;
     card.innerHTML = `
         <span class="anom-time">${a.time}</span>
+        ${exchangeBadge(a.exchange)}
         <span class="anom-reason">${a.reason}</span>
         <span class="anom-score">${a.anomaly_score}</span>
     `;
 
     list.prepend(card);
 
-    // 최대 20개만 유지
     const cards = list.querySelectorAll(".anomaly-card");
     if (cards.length > 20) cards[cards.length - 1].remove();
+}
+
+
+function renderGlobalAnomalies(anomalies) {
+    const list = document.getElementById("global-anomaly-list");
+    if (!list) return;
+
+    if (!anomalies || anomalies.length === 0) {
+        list.innerHTML = `<p class="no-data">탐지된 글로벌 이상 없음</p>`;
+        return;
+    }
+
+    list.innerHTML = anomalies.map(a => `
+        <div class="anomaly-card ${a.severity}">
+            <span class="anom-time">${a.time}</span>
+            ${scopeBadge(a.exchanges)}
+            <span class="anom-symbol">${a.symbol.replace("USDT","")}</span>
+            <span class="anom-reason">${a.exchanges.join(", ")}</span>
+            <span class="anom-score">${a.avg_score}</span>
+        </div>
+    `).join("");
 }
 
 
@@ -232,12 +272,10 @@ function prependAnomaly(a) {
 function switchSymbol(symbol) {
     currentSymbol = symbol;
 
-    // 탭 활성화
     document.querySelectorAll(".symbol-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.symbol === symbol);
     });
 
-    // 데이터 로드
     loadOHLCV(symbol);
     loadAnomalies(symbol);
     connectWS(symbol);
@@ -250,16 +288,18 @@ function switchSymbol(symbol) {
 document.addEventListener("DOMContentLoaded", () => {
     initChart();
 
-    // 심볼 탭 클릭 이벤트
     document.querySelectorAll(".symbol-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             switchSymbol(btn.dataset.symbol);
         });
     });
 
-    // 첫 번째 심볼 자동 선택
     const firstBtn = document.querySelector(".symbol-btn");
     if (firstBtn) {
         switchSymbol(firstBtn.dataset.symbol);
     }
+
+    // global anomaly 로드 및 1분마다 갱신
+    loadGlobalAnomalies();
+    setInterval(loadGlobalAnomalies, 60000);
 });
