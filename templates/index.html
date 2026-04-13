@@ -14,6 +14,7 @@
             <h1>CoinView</h1>
             <span id="current-price">-</span>
             <span id="price-change" class="neutral">-</span>
+            <button id="tz-btn" class="tz-toggle">UTC</button>
         </header>
 
         <div id="symbol-tabs">
@@ -26,12 +27,10 @@
             {% endfor %}
         </div>
 
-        <!-- 메인 캔들 차트 -->
         <div id="chart-container">
             <div id="chart"></div>
         </div>
 
-        <!-- 피처 패널 -->
         <div class="feature-panel">
             <div class="feature-label">Vol Z-score <span class="feature-desc">(평소 대비 거래량 배율 · 빨강 &gt;2σ)</span></div>
             <div id="chart-volz"></div>
@@ -42,7 +41,6 @@
             <div id="chart-vol1h"></div>
         </div>
 
-        <!-- 글로벌 이상탐지 패널 -->
         <div id="global-anomaly-panel">
             <h3>🌐 글로벌 이상탐지 <span class="panel-desc">(2개 이상 거래소 동시 탐지)</span></h3>
             <div id="global-anomaly-list">
@@ -50,7 +48,6 @@
             </div>
         </div>
 
-        <!-- 심볼별 이상탐지 패널 -->
         <div id="anomaly-panel">
             <h3>🔍 이상탐지 알림 <span class="panel-desc">(전체 거래소)</span></h3>
             <div id="anomaly-list">

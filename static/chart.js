@@ -12,6 +12,31 @@ let chartFeature = null;
 let chartVol1h   = null;
 let ws           = null;
 let currentSymbol = null;
+let timezone     = 'UTC'; // 'UTC' or 'KST'
+
+
+// ────────────────────────────────────────
+// 시간 포맷
+// ────────────────────────────────────────
+function formatTime(unixTimestamp) {
+    const date = new Date(unixTimestamp * 1000);
+    if (timezone === 'KST') {
+        return new Date(date.getTime() + 9 * 60 * 60 * 1000)
+            .toISOString().slice(11, 16);
+    }
+    return date.toISOString().slice(11, 16);
+}
+
+function toggleTimezone() {
+    timezone = timezone === 'UTC' ? 'KST' : 'UTC';
+    document.getElementById('tz-btn').textContent = timezone;
+
+    // 현재 심볼 다시 로드해서 시간 갱신
+    if (currentSymbol) {
+        loadAnomalies(currentSymbol);
+        loadGlobalAnomalies();
+    }
+}
 
 
 // ────────────────────────────────────────
@@ -21,7 +46,6 @@ function initChart() {
     const container = document.getElementById("chart");
     const width = container.clientWidth || container.parentElement.clientWidth || 800;
 
-    // 메인 캔들 차트
     chart = LightweightCharts.createChart(container, {
         width:  width,
         height: 350,
@@ -44,7 +68,6 @@ function initChart() {
         scaleMargins: { top: 0.85, bottom: 0 },
     });
 
-    // Vol Z-score 차트
     const volZContainer = document.getElementById("chart-volz");
     chartFeature = LightweightCharts.createChart(volZContainer, {
         width:  width,
@@ -61,7 +84,6 @@ function initChart() {
         priceScaleId: "right",
     });
 
-    // Vol 1h (변동성) 차트
     const vol1hContainer = document.getElementById("chart-vol1h");
     chartVol1h = LightweightCharts.createChart(vol1hContainer, {
         width:  width,
@@ -78,7 +100,6 @@ function initChart() {
         lineWidth: 2,
     });
 
-    // 시간축 동기화
     chart.timeScale().subscribeVisibleTimeRangeChange(range => {
         if (range) {
             chartFeature.timeScale().setVisibleRange(range);
@@ -147,7 +168,6 @@ async function loadFeatures(symbol) {
     const resp = await fetch(`/api/features/${symbol}?hours=3`);
     const data = await resp.json();
 
-    // Vol Z-score
     const volZData = data
         .filter(d => d.vol_z_1d !== null)
         .map(d => ({
@@ -159,7 +179,6 @@ async function loadFeatures(symbol) {
         }));
     volZSeries.setData(volZData);
 
-    // Vol 1h (변동성)
     const vol1hData = data
         .filter(d => d.vol_1h !== null)
         .map(d => ({ time: d.time, value: d.vol_1h }));
@@ -249,7 +268,7 @@ function renderAnomalies(anomalies) {
     }
     list.innerHTML = anomalies.map(a => `
         <div class="anomaly-card ${a.severity}">
-            <span class="anom-time">${a.time}</span>
+            <span class="anom-time">${formatTime(a.ohlcv_time)}</span>
             ${exchangeBadge(a.exchange)}
             <span class="anom-reason">${a.reason}</span>
             <span class="anom-score">${a.anomaly_score}</span>
@@ -266,7 +285,7 @@ function prependAnomaly(a) {
     const card = document.createElement("div");
     card.className = `anomaly-card ${a.severity}`;
     card.innerHTML = `
-        <span class="anom-time">${a.time}</span>
+        <span class="anom-time">${formatTime(a.ohlcv_time)}</span>
         ${exchangeBadge(a.exchange)}
         <span class="anom-reason">${a.reason}</span>
         <span class="anom-score">${a.anomaly_score}</span>
@@ -287,7 +306,7 @@ function renderGlobalAnomalies(anomalies) {
     }
     list.innerHTML = anomalies.map(a => `
         <div class="anomaly-card ${a.severity}">
-            <span class="anom-time">${a.time}</span>
+            <span class="anom-time">${formatTime(a.ohlcv_time)}</span>
             ${scopeBadge(a.exchanges)}
             <span class="anom-symbol">${a.symbol.replace("USDT","")}</span>
             <span class="anom-reason">${a.exchanges.join(", ")}</span>
@@ -319,6 +338,8 @@ function switchSymbol(symbol) {
 // ────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
     initChart();
+
+    document.getElementById("tz-btn").addEventListener("click", toggleTimezone);
 
     document.querySelectorAll(".symbol-btn").forEach(btn => {
         btn.addEventListener("click", () => switchSymbol(btn.dataset.symbol));
