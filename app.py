@@ -149,6 +149,70 @@ def fetch_global_anomalies(hours: int = 3) -> list[dict]:
     ]
 
 
+
+def fetch_features(symbol: str, exchange: str = "binance", hours: int = 3) -> list[dict]:
+    """OHLCV에서 이상탐지 피처 계산 후 반환."""
+    import numpy as np
+    since = datetime.now(tz=timezone.utc) - timedelta(hours=hours)
+    conn  = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT DISTINCT ON (time) time, open, high, low, close, volume
+                FROM ohlcv_1m
+                WHERE symbol   = %s
+                  AND exchange = %s
+                  AND time     >= %s
+                ORDER BY time ASC;
+            """, (symbol, exchange, since))
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
+        return []
+
+    import pandas as pd
+    df = pd.DataFrame(rows, columns=["time","open","high","low","close","volume"])
+    df["time"] = pd.to_datetime(df["time"], utc=True)
+    for col in ["open","high","low","close","volume"]:
+        df[col] = df[col].astype(float)
+
+    # 피처 계산 (anomaly_detect.py와 동일)
+    close  = df["close"]
+    high   = df["high"]
+    low    = df["low"]
+    open_  = df["open"]
+    vol    = df["volume"]
+    denom  = close.replace(0, np.nan)
+
+    df["logret"]     = np.log(close).diff()
+    df["range"]      = (high - low) / denom
+    df["body"]       = (close - open_) / denom
+    df["upper_wick"] = (high - np.maximum(open_, close)) / denom
+    df["lower_wick"] = (np.minimum(open_, close) - low) / denom
+    df["vol_1h"]     = df["logret"].rolling(60,   min_periods=10).std()
+    df["vol_1d"]     = df["logret"].rolling(1440, min_periods=60).std()
+    vmean            = vol.rolling(1440, min_periods=60).mean()
+    vstd             = vol.rolling(1440, min_periods=60).std()
+    df["vol_z_1d"]   = (vol - vmean) / vstd.replace(0, np.nan)
+
+    df = df.replace([np.inf, -np.inf], np.nan)
+
+    return [
+        {
+            "time":        int(row["time"].timestamp()),
+            "logret":      None if pd.isna(row["logret"])     else round(float(row["logret"]),     6),
+            "range":       None if pd.isna(row["range"])      else round(float(row["range"]),      6),
+            "body":        None if pd.isna(row["body"])       else round(float(row["body"]),       6),
+            "upper_wick":  None if pd.isna(row["upper_wick"]) else round(float(row["upper_wick"]), 6),
+            "lower_wick":  None if pd.isna(row["lower_wick"]) else round(float(row["lower_wick"]), 6),
+            "vol_1h":      None if pd.isna(row["vol_1h"])     else round(float(row["vol_1h"]),     6),
+            "vol_z_1d":    None if pd.isna(row["vol_z_1d"])   else round(float(row["vol_z_1d"]),   6),
+        }
+        for _, row in df.iterrows()
+    ]
+
 def fetch_symbols(exchange: str = "binance") -> list[str]:
     conn = get_conn()
     try:
@@ -181,6 +245,12 @@ async def index(request: Request):
 async def api_ohlcv(symbol: str, hours: int = 3, exchange: str = "binance"):
     return fetch_ohlcv(symbol.upper(), exchange=exchange, hours=hours)
 
+
+
+@app.get("/api/features/{symbol}")
+async def api_features(symbol: str, hours: int = 3, exchange: str = "binance"):
+    """이상탐지 피처 시계열 반환."""
+    return fetch_features(symbol.upper(), exchange=exchange, hours=hours)
 
 @app.get("/api/anomalies/global")
 async def api_global_anomalies(hours: int = 3):

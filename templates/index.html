@@ -26,8 +26,20 @@
             {% endfor %}
         </div>
 
+        <!-- 메인 캔들 차트 -->
         <div id="chart-container">
             <div id="chart"></div>
+        </div>
+
+        <!-- 피처 패널 -->
+        <div class="feature-panel">
+            <div class="feature-label">Vol Z-score <span class="feature-desc">(평소 대비 거래량 배율 · 빨강 &gt;2σ)</span></div>
+            <div id="chart-volz"></div>
+        </div>
+
+        <div class="feature-panel">
+            <div class="feature-label">Volatility 1h <span class="feature-desc">(1시간 롤링 변동성)</span></div>
+            <div id="chart-vol1h"></div>
         </div>
 
         <!-- 글로벌 이상탐지 패널 -->
@@ -47,7 +59,6 @@
         </div>
 
     </div>
-
     <script src="/static/chart.js"></script>
 </body>
 </html>
