@@ -1,4 +1,3 @@
-/* static/style.css */
 * {
     margin: 0;
     padding: 0;
@@ -17,7 +16,6 @@ body {
     padding: 20px;
 }
 
-/* ── 헤더 ── */
 header {
     display: flex;
     align-items: center;
@@ -25,12 +23,23 @@ header {
     padding: 16px 0;
     border-bottom: 1px solid #21262d;
     margin-bottom: 16px;
+    flex-wrap: wrap;
 }
 
 header h1 {
     font-size: 1.4rem;
     font-weight: 700;
     color: #58a6ff;
+}
+
+.selected-exchange-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #1a2e3a;
+    color: #58a6ff;
+    border: 1px solid #30363d;
 }
 
 #current-price {
@@ -46,11 +55,10 @@ header h1 {
     border-radius: 6px;
 }
 
-#price-change.up     { color: #3fb950; background: #1a2e1a; }
-#price-change.down   { color: #f85149; background: #2e1a1a; }
-#price-change.neutral{ color: #8b949e; background: #21262d; }
+#price-change.up { color: #3fb950; background: #1a2e1a; }
+#price-change.down { color: #f85149; background: #2e1a1a; }
+#price-change.neutral { color: #8b949e; background: #21262d; }
 
-/* ── 심볼 탭 ── */
 #symbol-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -81,8 +89,56 @@ header h1 {
     font-weight: 700;
 }
 
-/* ── 차트 ── */
-#chart-container {
+.toggle-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+}
+
+.toggle-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.toggle-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #8b949e;
+    margin-right: 4px;
+}
+
+.exchange-toggle,
+.exchange-focus {
+    padding: 6px 12px;
+    border: 1px solid #30363d;
+    border-radius: 999px;
+    background: #21262d;
+    color: #8b949e;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.exchange-toggle.active,
+.exchange-focus.active {
+    background: #58a6ff;
+    border-color: #58a6ff;
+    color: #0d1117;
+}
+
+#chart-container,
+.feature-panel,
+#global-anomaly-panel,
+#anomaly-panel {
     background: #161b22;
     border: 1px solid #21262d;
     border-radius: 12px;
@@ -90,18 +146,156 @@ header h1 {
     margin-bottom: 16px;
 }
 
-#chart {
+#chart,
+#chart-compare {
     width: 100%;
+}
+
+#chart {
     height: 450px;
     min-height: 450px;
 }
 
-/* ── 이상탐지 패널 ── */
-#anomaly-panel {
-    background: #161b22;
-    border: 1px solid #21262d;
+#chart-compare {
+    height: 220px;
+}
+
+#chart-volz,
+#chart-vol1h {
+    width: 100%;
+    height: 120px;
+}
+
+.feature-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #8b949e;
+    margin-bottom: 10px;
+}
+
+.feature-desc {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: #6e7681;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mini-action-btn {
+    padding: 6px 10px;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    background: #21262d;
+    color: #8b949e;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mini-action-btn:hover {
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+
+.core-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+}
+
+.core-card {
+    background: #0f1722;
+    border: 1px solid #263041;
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    color: inherit;
+}
+
+.core-card:hover {
+    transform: translateY(-1px);
+    border-color: #58a6ff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.core-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.core-symbol {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #e6edf3;
+}
+
+.core-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.overview-price-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.82rem;
+}
+
+.overview-exchange {
+    color: #8b949e;
+    font-weight: 600;
+}
+
+.overview-price {
+    color: #e6edf3;
+    font-weight: 700;
+}
+
+.core-card-footer {
+    border-top: 1px solid #21262d;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.overview-spread {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #8b949e;
+}
+
+.overview-spread span {
+    color: #58a6ff;
+    font-weight: 700;
+}
+
+.overview-anomaly-meta {
+    font-size: 0.75rem;
+    color: #c9d1d9;
+}
+
+.muted {
+    color: #6e7681;
+}
+
+#global-anomaly-panel h3 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: #58a6ff;
 }
 
 #anomaly-panel h3 {
@@ -110,11 +304,18 @@ header h1 {
     color: #8b949e;
 }
 
-#anomaly-list {
+.panel-desc {
+    font-size: 0.75rem;
+    color: #8b949e;
+    font-weight: 400;
+}
+
+#anomaly-list,
+#global-anomaly-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 200px;
+    max-height: 220px;
     overflow-y: auto;
 }
 
@@ -123,7 +324,6 @@ header h1 {
     font-size: 0.9rem;
 }
 
-/* 이상탐지 카드 */
 .anomaly-card {
     display: flex;
     align-items: flex-start;
@@ -144,23 +344,23 @@ header h1 {
     border-color: #3fb950;
 }
 
-.anomaly-card .anom-time {
+.anom-time {
     color: #8b949e;
     white-space: nowrap;
     font-size: 0.8rem;
 }
 
-.anomaly-card .anom-reason {
+.anom-reason {
     color: #e6edf3;
     flex: 1;
 }
 
-.anomaly-card .anom-score {
+.anom-score {
     color: #8b949e;
     font-size: 0.75rem;
     white-space: nowrap;
 }
-/* ── 거래소 배지 ── */
+
 .exchange-badge {
     font-size: 0.7rem;
     font-weight: 700;
@@ -169,7 +369,6 @@ header h1 {
     white-space: nowrap;
 }
 
-/* ── scope 배지 ── */
 .scope-badge {
     font-size: 0.7rem;
     font-weight: 700;
@@ -177,66 +376,17 @@ header h1 {
     border-radius: 4px;
     white-space: nowrap;
 }
-.scope-global { background: #1a2e3a; color: #58a6ff; }
-.scope-cross  { background: #2e2a1a; color: #f0b90b; }
-.scope-local  { background: #21262d; color: #8b949e; }
 
-/* ── 심볼 텍스트 ── */
+.scope-global { background: #1a2e3a; color: #58a6ff; }
+.scope-cross { background: #2e2a1a; color: #f0b90b; }
+.scope-local { background: #21262d; color: #8b949e; }
+
 .anom-symbol {
     font-weight: 700;
     color: #e6edf3;
     font-size: 0.85rem;
 }
 
-/* ── 글로벌 패널 ── */
-#global-anomaly-panel {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-}
-
-#global-anomaly-panel h3 {
-    font-size: 1rem;
-    margin-bottom: 12px;
-    color: #58a6ff;
-}
-
-.panel-desc {
-    font-size: 0.75rem;
-    color: #8b949e;
-    font-weight: 400;
-}
-
-/* ── 피처 패널 ── */
-.feature-panel {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 8px;
-}
-
-.feature-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #8b949e;
-    margin-bottom: 8px;
-}
-
-.feature-desc {
-    font-weight: 400;
-    font-size: 0.75rem;
-    color: #484f58;
-}
-
-#chart-volz, #chart-vol1h {
-    width: 100%;
-    height: 120px;
-}
-
-/* ── UTC/KST 토글 ── */
 .tz-toggle {
     margin-left: auto;
     padding: 4px 12px;

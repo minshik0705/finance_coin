@@ -5,17 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoinView</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css?v=20260415-3">
 </head>
 <body>
     <div id="app">
-
         <header>
             <h1>CoinView</h1>
+            <span id="selected-exchange-badge" class="selected-exchange-badge">Binance</span>
             <span id="current-price">-</span>
             <span id="price-change" class="neutral">-</span>
             <button id="tz-btn" class="tz-toggle">UTC</button>
         </header>
+
+        <section id="core-overview-panel" class="feature-panel">
+            <div class="section-header">
+                <div class="feature-label">Core Universe Overview <span class="feature-desc">(핵심 종목 빠른 점검)</span></div>
+                <button id="refresh-overview-btn" class="mini-action-btn">새로고침</button>
+            </div>
+            <div id="core-overview-grid" class="core-grid">
+                <p class="no-data">core overview 불러오는 중...</p>
+            </div>
+        </section>
 
         <div id="symbol-tabs">
             {% for symbol in symbols %}
@@ -27,12 +37,34 @@
             {% endfor %}
         </div>
 
+        <div id="exchange-toggle-bar" class="toggle-bar">
+            <div class="toggle-group">
+                <span class="toggle-title">비교 라인 표시</span>
+                <button class="exchange-toggle active" data-exchange="binance">Binance</button>
+                <button class="exchange-toggle active" data-exchange="bybit">Bybit</button>
+                <button class="exchange-toggle active" data-exchange="okx">OKX</button>
+            </div>
+
+            <div class="toggle-group">
+                <span class="toggle-title">상세 캔들 기준</span>
+                <button class="exchange-focus active" data-exchange="binance">Binance</button>
+                <button class="exchange-focus" data-exchange="bybit">Bybit</button>
+                <button class="exchange-focus" data-exchange="okx">OKX</button>
+            </div>
+        </div>
+
+        <div class="feature-panel">
+            <div class="feature-label">Compare Price <span class="feature-desc">(3개 거래소 종가 비교)</span></div>
+            <div id="chart-compare"></div>
+        </div>
+
         <div id="chart-container">
+            <div class="feature-label">Selected Exchange Candlestick <span class="feature-desc">(선택 거래소 상세 차트)</span></div>
             <div id="chart"></div>
         </div>
 
         <div class="feature-panel">
-            <div class="feature-label">Vol Z-score <span class="feature-desc">(평소 대비 거래량 배율 · 빨강 &gt;2σ)</span></div>
+            <div class="feature-label">Vol Z-score <span class="feature-desc">(평소 대비 거래량 배율 · 빨강 >2σ)</span></div>
             <div id="chart-volz"></div>
         </div>
 
@@ -49,13 +81,16 @@
         </div>
 
         <div id="anomaly-panel">
-            <h3>🔍 이상탐지 알림 <span class="panel-desc">(전체 거래소)</span></h3>
+            <h3>🔍 선택 거래소 이상탐지 <span class="panel-desc">(상세 캔들 기준 거래소만 표시)</span></h3>
             <div id="anomaly-list">
                 <p class="no-data">탐지된 이상 없음</p>
             </div>
         </div>
-
     </div>
-    <script src="/static/chart.js"></script>
+
+    <script>
+        window.DEFAULT_EXCHANGE = "{{ default_exchange }}";
+    </script>
+    <script src="/static/chart.js?v=20260415-3"></script>
 </body>
 </html>
