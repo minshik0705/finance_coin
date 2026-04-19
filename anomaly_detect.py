@@ -197,8 +197,16 @@ def load_model(symbol: str, exchange: str) -> dict | None:
     path = MODEL_DIR / f"{exchange}_{symbol}_isoforest.joblib"
     if not path.exists():
         return None
-    return joblib.load(path)
-
+    try:
+        return joblib.load(path)
+    except Exception as e:
+        print(f"[WARN] {exchange} {symbol}: model load failed, retrain fallback: {e}")
+        try:
+            bad_path = path.with_suffix(path.suffix + ".bad")
+            path.rename(bad_path)
+        except Exception:
+            pass
+        return None
 
 # ────────────────────────────────────────
 # 탐지
@@ -301,7 +309,6 @@ def detect(
     finally:
         conn.close()
 
-
 def run_all(exchange: str = "binance", retrain: bool = False) -> None:
     conn = get_conn()
 
@@ -324,12 +331,14 @@ def run_all(exchange: str = "binance", retrain: bool = False) -> None:
     conn = get_conn()
     try:
         for symbol in symbols:
-            results = detect(symbol, exchange, retrain=retrain)
-            if results:
-                insert_anomaly_results(conn, results)
+            try:
+                results = detect(symbol, exchange, retrain=retrain)
+                if results:
+                    insert_anomaly_results(conn, results)
+            except Exception as e:
+                print(f"[ERROR] {exchange} {symbol} 탐지 실패: {e}")
     finally:
         conn.close()
-
 
 # ────────────────────────────────────────
 # 단독 실행 (테스트용)

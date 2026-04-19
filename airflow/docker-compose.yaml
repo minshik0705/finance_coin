@@ -49,9 +49,7 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  build:
-    context: ..
-    dockerfile: airflow/Dockerfile
+  image: airflow-custom:latest
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -112,6 +110,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "ruok,mntr,conf"
     ports:
       - "2181:2181"
 
@@ -137,9 +136,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
-      KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: 30000
-      KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 30000
-    restart: always
+      KAFKA_HEAP_OPTS: "-Xms512M -Xmx512M"
+      KAFKA_JVM_PERFORMANCE_OPTS: "-XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
 
   postgres:
     image: postgres:13
