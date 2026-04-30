@@ -1,0 +1,65 @@
+services:
+  superset_db:
+    image: postgres:16
+    container_name: coinview_superset_db
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+    volumes:
+      - superset_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superset -d superset"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  superset_init:
+    image: coinview-superset:6.0.0
+    container_name: coinview_superset_init
+    depends_on:
+      superset_db:
+        condition: service_healthy
+    environment:
+      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset_db:5432/superset
+    volumes:
+      - ./docker/superset_config.py:/app/pythonpath/superset_config.py
+    command:
+      - /bin/bash
+      - -lc
+      - |
+        /app/.venv/bin/superset db upgrade
+        /app/.venv/bin/superset fab create-admin \
+          --username ${SUPERSET_ADMIN_USERNAME} \
+          --firstname Coin \
+          --lastname View \
+          --email ${SUPERSET_ADMIN_EMAIL} \
+          --password ${SUPERSET_ADMIN_PASSWORD} || true
+        /app/.venv/bin/superset init
+
+  superset_app:
+    image: coinview-superset:6.0.0
+    container_name: coinview_superset_app
+    depends_on:
+      superset_init:
+        condition: service_completed_successfully
+    environment:
+      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset_db:5432/superset
+    volumes:
+      - ./docker/superset_config.py:/app/pythonpath/superset_config.py
+    ports:
+      - "8088:8088"
+    command:
+      - /bin/bash
+      - -lc
+      - |
+        /app/.venv/bin/superset run -h 0.0.0.0 -p 8088
+    restart: unless-stopped
+
+volumes:
+  superset_db_data:

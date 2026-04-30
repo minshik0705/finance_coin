@@ -94,3 +94,11 @@ airflow/Configuring
 airflow/Launching
 airflow/Running
 airflow/User
+
+# Superset local secrets
+superset/.env
+superset/backup_*/
+
+# Python cache
+__pycache__/
+*.py[cod]
