@@ -404,3 +404,12 @@ header h1 {
     border-color: #58a6ff;
     color: #58a6ff;
 }
+
+
+#global-anomaly-list .anomaly-card {
+    cursor: pointer;
+}
+
+#global-anomaly-list .anomaly-card:hover {
+    filter: brightness(1.08);
+}

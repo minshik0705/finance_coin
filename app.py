@@ -23,6 +23,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 SUPPORTED_EXCHANGES = ["binance", "bybit", "okx"]
+STATIC_BUILD_ID = int(datetime.now(tz=timezone.utc).timestamp())
 
 
 def get_conn():
@@ -135,21 +136,63 @@ def fetch_anomalies(symbol: str, exchange: str = "all", hours: int = 3) -> list[
         with conn.cursor() as cur:
             if exchange == "all":
                 cur.execute("""
-                    SELECT time, exchange, anomaly_score, severity, reason, ohlcv_time
-                    FROM anomaly_results
-                    WHERE symbol = %s
-                      AND time >= %s
-                    ORDER BY time DESC
+                    WITH ranked AS (
+                        SELECT
+                            time,
+                            exchange,
+                            anomaly_score,
+                            severity,
+                            reason,
+                            DATE_TRUNC('minute', ohlcv_time) AS ohlcv_minute,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY exchange, DATE_TRUNC('minute', ohlcv_time)
+                                ORDER BY detected_at DESC, time DESC
+                            ) AS rn
+                        FROM anomaly_results
+                        WHERE symbol = %s
+                          AND time >= %s
+                    )
+                    SELECT
+                        time,
+                        exchange,
+                        anomaly_score,
+                        severity,
+                        reason,
+                        ohlcv_minute
+                    FROM ranked
+                    WHERE rn = 1
+                    ORDER BY ohlcv_minute DESC
                     LIMIT 50;
                 """, (symbol, since))
             else:
                 cur.execute("""
-                    SELECT time, exchange, anomaly_score, severity, reason, ohlcv_time
-                    FROM anomaly_results
-                    WHERE symbol = %s
-                      AND exchange = %s
-                      AND time >= %s
-                    ORDER BY time DESC
+                    WITH ranked AS (
+                        SELECT
+                            time,
+                            exchange,
+                            anomaly_score,
+                            severity,
+                            reason,
+                            DATE_TRUNC('minute', ohlcv_time) AS ohlcv_minute,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY exchange, DATE_TRUNC('minute', ohlcv_time)
+                                ORDER BY detected_at DESC, time DESC
+                            ) AS rn
+                        FROM anomaly_results
+                        WHERE symbol = %s
+                          AND exchange = %s
+                          AND time >= %s
+                    )
+                    SELECT
+                        time,
+                        exchange,
+                        anomaly_score,
+                        severity,
+                        reason,
+                        ohlcv_minute
+                    FROM ranked
+                    WHERE rn = 1
+                    ORDER BY ohlcv_minute DESC
                     LIMIT 50;
                 """, (symbol, exchange, since))
             rows = cur.fetchall()
@@ -158,7 +201,7 @@ def fetch_anomalies(symbol: str, exchange: str = "all", hours: int = 3) -> list[
 
     return [
         {
-            "time": row[0].strftime("%H:%M"),
+            "time": row[5].strftime("%H:%M"),
             "exchange": row[1],
             "anomaly_score": round(float(row[2]), 4),
             "severity": row[3],
@@ -167,7 +210,6 @@ def fetch_anomalies(symbol: str, exchange: str = "all", hours: int = 3) -> list[
         }
         for row in rows
     ]
-
 
 def fetch_global_anomalies(hours: int = 3) -> list[dict]:
     since = datetime.now(tz=timezone.utc) - timedelta(hours=hours)
@@ -418,6 +460,7 @@ async def index(request: Request):
             "request": request,
             "symbols": symbols,
             "default_exchange": "binance",
+            "build_id": STATIC_BUILD_ID,
         }
     )
 
@@ -517,9 +560,14 @@ async def websocket_endpoint(websocket: WebSocket, symbol: str):
 
                     cur.execute("""
                         SELECT time, exchange, anomaly_score, severity, reason, ohlcv_time
-                        FROM anomaly_results
-                        WHERE symbol = %s
-                        ORDER BY time DESC
+                        FROM (
+                            SELECT DISTINCT ON (exchange, ohlcv_time)
+                                time, exchange, anomaly_score, severity, reason, ohlcv_time, detected_at
+                            FROM anomaly_results
+                            WHERE symbol = %s
+                            ORDER BY exchange, ohlcv_time DESC, detected_at DESC
+                        ) t
+                        ORDER BY ohlcv_time DESC
                         LIMIT 10;
                     """, (symbol,))
                     rows = cur.fetchall()

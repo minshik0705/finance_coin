@@ -360,9 +360,14 @@ function connectWS(symbol) {
                 updatePrice(row.close, null);
             }
         });
+        // WebSocket으로 anomaly를 직접 누적하지 않는다.
+        // 같은 anomaly가 주기적으로 반복 전달되면 화면에 계속 쌓이기 때문이다.
+        // 대신 REST API 결과로 목록 전체를 다시 렌더링한다.
+        if (currentSymbol === symbol) {
+            loadAnomalies(symbol);
+            loadGlobalAnomalies();
+        }
 
-        const matchingAnomaly = (msg.anomalies || []).find(a => a.exchange === selectedExchange);
-        if (matchingAnomaly) prependAnomaly(matchingAnomaly);
     };
 }
 
@@ -382,15 +387,45 @@ function updatePrice(price, prevPrice) {
     }
 }
 
+function anomalyMinute(a) {
+    const raw = a.ohlcv_time || a.time || "";
+    const n = Number(raw);
+
+    if (!Number.isNaN(n) && n > 0) {
+        return Math.floor(n / 60);
+    }
+
+    return String(raw);
+}
+
+function anomalyKey(a) {
+    const symbol = a.symbol || currentSymbol || "";
+    const exchange = a.exchange || "";
+    return `${symbol}:${exchange}:${anomalyMinute(a)}`;
+}
+
 function renderAnomalies(anomalies) {
     const list = document.getElementById("anomaly-list");
+    if (!list) return;
+
     if (!anomalies || anomalies.length === 0) {
         list.innerHTML = `<p class="no-data">탐지된 이상 없음</p>`;
         return;
     }
 
-    list.innerHTML = anomalies.map(a => `
-        <div class="anomaly-card ${a.severity}">
+    const seen = new Set();
+    const deduped = [];
+
+    for (const a of anomalies) {
+        const key = anomalyKey(a);
+        if (seen.has(key)) continue;
+
+        seen.add(key);
+        deduped.push(a);
+    }
+
+    list.innerHTML = deduped.map(a => `
+        <div class="anomaly-card ${a.severity}" data-anomaly-key="${anomalyKey(a)}">
             <span class="anom-time">${formatTime(a.ohlcv_time)}</span>
             ${exchangeBadge(a.exchange)}
             <span class="anom-reason">${a.reason}</span>
@@ -400,22 +435,12 @@ function renderAnomalies(anomalies) {
 }
 
 function prependAnomaly(a) {
-    const list = document.getElementById("anomaly-list");
-    const noData = list.querySelector(".no-data");
-    if (noData) noData.remove();
-
-    const card = document.createElement("div");
-    card.className = `anomaly-card ${a.severity}`;
-    card.innerHTML = `
-        <span class="anom-time">${formatTime(a.ohlcv_time)}</span>
-        ${exchangeBadge(a.exchange)}
-        <span class="anom-reason">${a.reason}</span>
-        <span class="anom-score">${a.anomaly_score}</span>
-    `;
-    list.prepend(card);
-
-    const cards = list.querySelectorAll(".anomaly-card");
-    if (cards.length > 20) cards[cards.length - 1].remove();
+    // 중요:
+    // 이전 구현은 WebSocket이 같은 anomaly를 보낼 때마다 DOM에 계속 누적했다.
+    // 이제는 append/prepend 하지 않고, API 기준 최신 목록을 다시 렌더링한다.
+    if (currentSymbol) {
+        loadAnomalies(currentSymbol);
+    }
 }
 
 function renderGlobalAnomalies(anomalies) {
@@ -426,7 +451,9 @@ function renderGlobalAnomalies(anomalies) {
     }
 
     list.innerHTML = anomalies.map(a => `
-        <div class="anomaly-card ${a.severity}">
+        <div class="anomaly-card ${a.severity} global-anomaly-card"
+             data-symbol="${a.symbol}"
+             title="${a.symbol} 차트로 이동">
             <span class="anom-time">${formatTime(a.ohlcv_time)}</span>
             ${scopeBadge(a.exchanges)}
             <span class="anom-symbol">${a.symbol.replace("USDT", "")}</span>
@@ -434,10 +461,162 @@ function renderGlobalAnomalies(anomalies) {
             <span class="anom-score">${a.avg_score}</span>
         </div>
     `).join("");
+
+    list.querySelectorAll(".global-anomaly-card").forEach(card => {
+        card.addEventListener("click", () => {
+            const symbol = card.dataset.symbol;
+            if (!symbol) return;
+            switchSymbol(symbol);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    });
+}
+
+function bindSymbolButtons() {
+    document.querySelectorAll(".symbol-btn").forEach(btn => {
+        if (btn.dataset.bound === "true") return;
+
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", () => switchSymbol(btn.dataset.symbol));
+    });
+}
+
+function ensureSymbolButton(symbol) {
+    const tabs = document.getElementById("symbol-tabs");
+    if (!tabs || !symbol) return;
+
+    const exists = Array.from(tabs.querySelectorAll(".symbol-btn"))
+        .some(btn => btn.dataset.symbol === symbol);
+
+    if (exists) return;
+
+    const btn = document.createElement("button");
+    btn.className = "symbol-btn";
+    btn.dataset.symbol = symbol;
+    btn.textContent = symbol.replace("USDT", "");
+    btn.addEventListener("click", () => switchSymbol(symbol));
+    btn.dataset.bound = "true";
+
+    tabs.appendChild(btn);
+}
+
+async function refreshSymbolTabs() {
+    const tabs = document.getElementById("symbol-tabs");
+    if (!tabs) return;
+
+    try {
+        const resp = await fetch(`/api/symbols`);
+        const symbols = await resp.json();
+
+        if (!symbols || symbols.length === 0) return;
+
+        symbols.forEach(symbol => ensureSymbolButton(symbol));
+        bindSymbolButtons();
+
+        document.querySelectorAll(".symbol-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.symbol === currentSymbol);
+        });
+
+    } catch (e) {
+        console.warn("[symbols] refresh failed", e);
+    }
+}
+
+function bindSymbolButtons() {
+    document.querySelectorAll(".symbol-btn").forEach(btn => {
+        if (btn.dataset.bound === "true") return;
+
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", () => switchSymbol(btn.dataset.symbol));
+    });
+}
+
+async function refreshSymbolTabs() {
+    const tabs = document.getElementById("symbol-tabs");
+    if (!tabs) return;
+
+    try {
+        const resp = await fetch(`/api/symbols`);
+        const symbols = await resp.json();
+
+        if (!symbols || symbols.length === 0) return;
+
+        const existing = new Set(
+            Array.from(tabs.querySelectorAll(".symbol-btn"))
+                .map(btn => btn.dataset.symbol)
+        );
+
+        symbols.forEach(symbol => {
+            if (existing.has(symbol)) return;
+
+            const btn = document.createElement("button");
+            btn.className = "symbol-btn";
+            btn.dataset.symbol = symbol;
+            btn.textContent = symbol.replace("USDT", "");
+
+            tabs.appendChild(btn);
+        });
+
+        bindSymbolButtons();
+
+        document.querySelectorAll(".symbol-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.symbol === currentSymbol);
+        });
+
+    } catch (e) {
+        console.warn("[symbols] refresh failed", e);
+    }
+}
+
+function bindSymbolButtons() {
+    document.querySelectorAll(".symbol-btn").forEach(btn => {
+        if (btn.dataset.bound === "true") return;
+
+        btn.dataset.bound = "true";
+        btn.addEventListener("click", () => switchSymbol(btn.dataset.symbol));
+    });
+}
+
+function ensureSymbolButton(symbol) {
+    const tabs = document.getElementById("symbol-tabs");
+    if (!tabs || !symbol) return;
+
+    const exists = Array.from(tabs.querySelectorAll(".symbol-btn"))
+        .some(btn => btn.dataset.symbol === symbol);
+
+    if (exists) return;
+
+    const btn = document.createElement("button");
+    btn.className = "symbol-btn";
+    btn.dataset.symbol = symbol;
+    btn.dataset.bound = "true";
+    btn.textContent = symbol.replace("USDT", "");
+    btn.addEventListener("click", () => switchSymbol(symbol));
+
+    tabs.appendChild(btn);
+}
+
+async function refreshSymbolTabs() {
+    try {
+        const resp = await fetch(`/api/symbols`);
+        const symbols = await resp.json();
+
+        if (!symbols || symbols.length === 0) return;
+
+        symbols.forEach(symbol => ensureSymbolButton(symbol));
+        bindSymbolButtons();
+
+        document.querySelectorAll(".symbol-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.symbol === currentSymbol);
+        });
+    } catch (e) {
+        console.warn("[symbols] refresh failed", e);
+    }
 }
 
 function switchSymbol(symbol) {
     currentSymbol = symbol;
+    ensureSymbolButton(symbol);
 
     document.querySelectorAll(".symbol-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.symbol === symbol);
@@ -490,11 +669,30 @@ document.addEventListener("DOMContentLoaded", () => {
     initCharts();
     bindExchangeToggles();
 
+    const globalAnomalyList = document.getElementById("global-anomaly-list");
+    if (globalAnomalyList && globalAnomalyList.dataset.boundClick !== "true") {
+        globalAnomalyList.dataset.boundClick = "true";
+        globalAnomalyList.addEventListener("click", event => {
+            const card = event.target.closest(".anomaly-card");
+            if (!card) return;
+
+            const symbolEl = card.querySelector(".anom-symbol");
+            if (!symbolEl) return;
+
+            const base = symbolEl.textContent.trim();
+            if (!base) return;
+
+            const symbol = base.endsWith("USDT") ? base : `${base}USDT`;
+            switchSymbol(symbol);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+
+
     document.getElementById("tz-btn").addEventListener("click", toggleTimezone);
 
-    document.querySelectorAll(".symbol-btn").forEach(btn => {
-        btn.addEventListener("click", () => switchSymbol(btn.dataset.symbol));
-    });
+    bindSymbolButtons();
+    refreshSymbolTabs();
 
     document.getElementById("refresh-overview-btn")?.addEventListener("click", loadCoreOverview);
 
@@ -509,5 +707,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(() => {
         if (currentSymbol) loadGlobalAnomalies();
         loadCoreOverview();
+        refreshSymbolTabs();
     }, 60000);
 });

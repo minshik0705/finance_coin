@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoinView</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
-    <link rel="stylesheet" href="/static/style.css?v=20260415-3">
+    <link rel="stylesheet" href="/static/style.css?v={{ build_id }}">
 </head>
 <body>
     <div id="app">
@@ -91,6 +91,6 @@
     <script>
         window.DEFAULT_EXCHANGE = "{{ default_exchange }}";
     </script>
-    <script src="/static/chart.js?v=20260415-3"></script>
+    <script src="/static/chart.js?v={{ build_id }}"></script>
 </body>
 </html>
